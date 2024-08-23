@@ -1,0 +1,103 @@
+﻿@page
+@model BackEnd.Pages.WorkingWithCatalogsModel
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    .rooms {
+        width: 700px; /* Width of the file and button container */
+        padding: 20px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Container shadow */
+        display: flex; /* Making the container a flex container */
+        flex-direction: column; /* Arrange items in a column */
+        align-items: center; /* Center items horizontally */
+        margin: auto; /* Center container */
+    }
+
+    .rooms-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #fff;
+        width: 100%; /* Full width of the rooms container */
+        margin-bottom: 10px; /* Margin below the container */
+    }
+
+    .room-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+        transition: background-color 0.3s;
+        cursor: pointer;
+        width: 100%; /* Full width of the container */
+        position: relative; /* For positioning the colored square */
+    }
+
+        .room-item:hover {
+            background-color: #f1f1f1;
+        }
+
+    .room-icon {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 10px;
+        font-size: 16px;
+        text-align: center;
+        line-height: 30px;
+        border-radius: 4px; /* Сделать квадрат с закругленными углами */
+    }
+
+    .room-name {
+        font-size: 14px;
+        color: #333;
+        flex: 1; /* Takes all available space */
+    }
+</style>
+
+<div class="rooms">
+    <h4>DocSpace rooms</h4>
+    <div class="rooms-container">
+        @foreach (var room in RoomStore.RoomsList)
+        {
+            <div class="room-item" onclick="handleRoomClick('@room.Id')">
+                <div class="room-icon" style="background-color: @ColorHelper.GetColorForRoom(room.Name)">
+                    @room.Name[0]
+                </div>
+                <span class="room-name">@room.Name</span>
+            </div>
+        }
+    </div>
+</div>
+<form id="selectRoomForm" method="post" asp-page-handler="LinkedRoomInfo">
+    <input type="hidden" name="roomId" id="roomId" />
+</form>
+<script>
+    function handleRoomClick(roomId) {
+        document.getElementById("roomId").value = roomId;
+        document.getElementById('selectRoomForm').submit();
+    }
+</script>

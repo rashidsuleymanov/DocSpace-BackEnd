@@ -1,0 +1,53 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Workspace\\Rashid\\ONLYOFFICE Samples\\Samples\\BackendSamples\\API-BackEnd-Samples\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{D8E138AA-4C4F-4E36-A8F7-DE1DE171CC6A}|BackEnd\\BackEnd.csproj|d:\\workspace\\rashid\\onlyoffice samples\\samples\\backendsamples\\api-backend-samples\\backend\\pages\\builderindocspace.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8E138AA-4C4F-4E36-A8F7-DE1DE171CC6A}|BackEnd\\BackEnd.csproj|solutionrelative:backend\\pages\\builderindocspace.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8E138AA-4C4F-4E36-A8F7-DE1DE171CC6A}|BackEnd\\BackEnd.csproj|d:\\workspace\\rashid\\onlyoffice samples\\samples\\backendsamples\\api-backend-samples\\backend\\pages\\builderindocspace.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{D8E138AA-4C4F-4E36-A8F7-DE1DE171CC6A}|BackEnd\\BackEnd.csproj|solutionrelative:backend\\pages\\builderindocspace.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "BuilderInDocSpace.cshtml.cs",
+              "DocumentMoniker": "D:\\Workspace\\Rashid\\ONLYOFFICE Samples\\Samples\\BackendSamples\\API-BackEnd-Samples\\BackEnd\\Pages\\BuilderInDocSpace.cshtml.cs",
+              "RelativeDocumentMoniker": "BackEnd\\Pages\\BuilderInDocSpace.cshtml.cs",
+              "ToolTip": "D:\\Workspace\\Rashid\\ONLYOFFICE Samples\\Samples\\BackendSamples\\API-BackEnd-Samples\\BackEnd\\Pages\\BuilderInDocSpace.cshtml.cs",
+              "RelativeToolTip": "BackEnd\\Pages\\BuilderInDocSpace.cshtml.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAAwAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-08-01T07:40:30.061Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "BuilderInDocSpace.cshtml",
+              "DocumentMoniker": "D:\\Workspace\\Rashid\\ONLYOFFICE Samples\\Samples\\BackendSamples\\API-BackEnd-Samples\\BackEnd\\Pages\\BuilderInDocSpace.cshtml",
+              "RelativeDocumentMoniker": "BackEnd\\Pages\\BuilderInDocSpace.cshtml",
+              "ToolTip": "D:\\Workspace\\Rashid\\ONLYOFFICE Samples\\Samples\\BackendSamples\\API-BackEnd-Samples\\BackEnd\\Pages\\BuilderInDocSpace.cshtml",
+              "RelativeToolTip": "BackEnd\\Pages\\BuilderInDocSpace.cshtml",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAcAAAAEAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2024-08-01T07:33:10.702Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

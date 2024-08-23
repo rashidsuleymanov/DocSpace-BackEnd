@@ -1,0 +1,22 @@
+﻿@page
+@model BackEnd.Pages.FirstSampleModel
+@{
+}
+
+<body>
+    <div id="holder" style="margin:auto; margin-top:200px; width:500px">
+        <form method="post">
+        <label for="login"><b>Email</b></label>
+        <input type="text" id="login" name="login" value="">
+        <label for="password"><b>Password</b></label>
+        <input type="text" id="confirmPassword" name="password" value="" style="-webkit-text-security: circle">
+        <label for="confirmPassword"><b>Confirm password</b></label>
+        <input type="text" id="confirmPassword" name="confirmPassword" value="" style="-webkit-text-security: circle">
+        <ul class="list-buttons doc-builder-list-buttons" style="height: auto;">
+            <li>
+                <button type="submit" asp-page-handler="Login" class="button red">Registration</button>
+            </li>
+        </ul>
+        </form>
+    </div>
+</body>

@@ -1,0 +1,436 @@
+﻿@page
+@model BackEnd.Pages.WorkingWithRoomsModel
+@{
+    var customersJson = System.Text.Json.JsonSerializer.Serialize(CustomerStore.Customers);
+    var filesJson = System.Text.Json.JsonSerializer.Serialize(FilesStore.AvailableFiles);
+}
+<style>
+    #filesContainer {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-height: 500px;
+        overflow-y: auto;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #fff;
+    }
+
+    .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+        transition: background-color 0.3s;
+    }
+
+        .file-item:hover {
+            background-color: #f1f1f1;
+        }
+
+    .file-name {
+        font-size: 16px;
+        color: #333;
+    }
+
+    .popup {
+        position: absolute;
+        background-color: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        padding: 10px;
+        border-radius: 4px;
+    }
+
+        .popup button {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 0.5rem 1rem;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+        }
+
+            .popup button:hover {
+                background-color: #0056b3;
+            }
+
+    .btn {
+        color: #fff;
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+        .btn:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+        .custom-table th {
+            background-color: #f2f2f2;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ccc;
+        }
+
+        .custom-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ccc;
+        }
+
+        .custom-table tbody tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .custom-table .action-column {
+            width: 100px;
+        }
+
+    .modal-header {
+        background-color: #007bff;
+        color: #fff;
+        border-bottom: none;
+    }
+
+    .modal-content {
+        border: 1px solid rgba(0, 123, 255, 0.2);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-footer {
+        border-top: none;
+    }
+
+    .modal-title {
+        color: #ffffff;
+    }
+
+    .files {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+        .files h4 {
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            color: #343a40;
+        }
+
+    .list-group-item {
+        border: 1px solid #dee2e6;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        transition: background-color 0.3s, color 0.3s;
+        text-align: left;
+        margin-right: 20px;
+    }
+
+        .list-group-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .list-group-item:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+    .btn-container {
+        display: flex;
+        gap: 5px;
+    }
+
+    body {
+        margin-top: 20px;
+    }
+
+    .radio-group {
+        margin-top: 10px; /* Отступ сверху */
+        margin-bottom: 10px; /* Отступ сверху */
+    }
+
+    .form-check-input {
+        margin-right: 10px; /* Отступ справа от радиокнопки */
+    }
+
+    .form-check-label {
+        font-size: 16px; /* Размер шрифта для метки */
+    }
+</style>
+
+<div class="row">
+    <div class="col-md-8">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Description</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var customer in CustomerStore.Customers)
+                {
+                    <tr data-customer-id="@customer.Id">
+                        <td>@customer.Name</td>
+                        <td>@customer.Description</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="showPopup(this, @customer.Id, '@customer.Name')">...</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-4">
+        <div class="files">
+            <h4>Files in room</h4>
+            <ul class="list-group text-center" id="filesList"></ul>
+        </div>
+    </div>
+</div>
+
+<!-- Popup for the button with three dots -->
+<div class="popup" id="popupMenu" style="display: none;">
+    <button class="btn" id="createRoom" onclick="openCreateRoomModal()">Create room</button>
+    <div style="margin-top: 5px;"></div>
+    <button class="btn" id="linkRoom" onclick="loadFilesAndShowModal()">Link a room</button>
+    <div style="margin-top: 5px;"></div>
+    <button class="btn" id="inviteRoom" onclick="inviteUserInRoomModal()">Invite to Room</button>
+    <div style="margin-top: 5px;"></div>
+    <button class="btn" id="closeDeal" onclick="closeDeal()">Close the deal</button>
+</div>
+
+<!-- Modal Windows -->
+<div class="modal fade" id="createRoomModal" tabindex="-1" role="dialog" aria-labelledby="createRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="CreateRoom">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createRoomModalLabel">Enter room name for customer: <span id="modalCustomerName"></span></h5>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Choose an option:</label><br />
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" id="publicRoom" name="typeRoom" value="6" />
+                            <label class="form-check-label" for="publicRoom">
+                                Public Room
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" id="formFillingRoom" name="typeRoom" value="1" />
+                            <label class="form-check-label" for="formFillingRoom">
+                                Form Filling Room
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" id="collaborationRoom" name="typeRoom" value="2" />
+                            <label class="form-check-label" for="collaborationRoom">
+                                Collaboration Room
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" id="customRoom" name="typeRoom" value="5" />
+                            <label class="form-check-label" for="customRoom">
+                                Custom Room
+                            </label>
+                        </div>
+                        <!-- Add more radio buttons as needed -->
+                    </div>
+                    <input type="hidden" id="customerIdInput" name="customerId" />
+                    <input type="text" class="form-control" id="roomNameInput" name="roomName" />
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn">Create</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="linkRoomModal" tabindex="-1" role="dialog" aria-labelledby="linkRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="linkRoomModalLabel">Link room to customer: <span id="modalCustomerNameLink"></span></h5>
+            </div>
+            <div class="modal-body">
+                <div id="filesContainer">
+                    @foreach (var room in RoomStore.RoomsList)
+                    {
+                        <div class="file-item">
+                            <span class="file-name">@room.Name</span>
+                            <button class="btn" onclick="linkRoom(@room.Id, '@room.Name')">Link</button>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="inviteRoomModal" tabindex="-1" role="dialog" aria-labelledby="inviteRoomModalRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="InviteUserToRoom">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="inviteRoomModalLabel">Enter the email address of the user you want to invite: <span id="inviteModalCustomerName"></span></h5>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="inviteCustomerIdInput" name="inviteCustomerId" />
+                    <input type="text" class="form-control" id="emailNameInput" name="email" />
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn">Send</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<form id="linkRoomToCustomerForm" method="post" asp-page-handler="LinkRoom">
+    <input type="hidden" name="customerId" id="customerId" />
+    <input type="hidden" name="roomId" id="roomId" />
+    <input type="hidden" name="roomName" id="roomName" />
+</form>
+<form id="closeDealForm" method="post" asp-page-handler="CloseDeal">
+    <input type="hidden" name="dealId" id="dealId" />
+</form>
+
+@section Scripts {
+    <script>
+        let selectedCustomerId = null;
+        const customers = @Html.Raw(customersJson);
+        const files = @Html.Raw(filesJson);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('tbody tr').forEach(row => {
+                row.addEventListener('click', function () {
+                    document.querySelectorAll('tbody tr.selected').forEach(selectedRow => selectedRow.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedCustomerId = parseInt(this.getAttribute('data-customer-id'));
+                    updateFilesList();
+                });
+            });
+        });
+
+        function showPopup(button, customerId, customerName) {
+            const popup = document.getElementById("popupMenu");
+            popup.style.display = "block";
+            const rect = button.getBoundingClientRect();
+            popup.style.top = `${rect.top + button.offsetHeight}px`;
+            popup.style.left = `${rect.left}px`;
+            if (customers.some(customer => customer.Id === customerId && customer.RoomId >0)) {
+                document.getElementById("createRoom").style.display = "none";
+                document.getElementById("linkRoom").style.display = "none";
+                document.getElementById("inviteRoom").style.display = "block";
+                document.getElementById("closeDeal").style.display = "block";
+            } else {
+                document.getElementById("createRoom").style.display = "block";
+                document.getElementById("linkRoom").style.display = "block";
+                document.getElementById("inviteRoom").style.display = "none";
+                document.getElementById("closeDeal").style.display = "none";
+            }
+            document.addEventListener("click", function closePopup(event) {
+                if (!popup.contains(event.target) && event.target !== button) {
+                    popup.style.display = "none";
+                    document.removeEventListener("click", closePopup);
+                }
+            });
+        }
+
+        function openCreateRoomModal() {
+            const selectedRow = document.querySelector("tr.selected");
+            if (!selectedRow) {
+                console.error("No row is selected.");
+                return;
+            }
+            const customerId = selectedRow.getAttribute("data-customer-id");
+            const customerName = selectedRow.querySelector("td:first-child").innerText;
+            document.getElementById("modalCustomerName").innerText = customerName;
+            document.getElementById("customerIdInput").value = customerId;
+            $('#createRoomModal').modal('show');
+        }
+        function inviteUserInRoomModal() {
+            const selectedRow = document.querySelector("tr.selected");
+            if (!selectedRow) {
+                console.error("No row is selected.");
+                return;
+            }
+            const customerId = selectedRow.getAttribute("data-customer-id");
+            const customerName = selectedRow.querySelector("td:first-child").innerText;
+            document.getElementById("inviteModalCustomerName").innerText = customerName;
+            document.getElementById("inviteCustomerIdInput").value = customerId;
+            $('#inviteRoomModal').modal('show');
+        }
+
+        function loadFilesAndShowModal() {
+            const selectedRow = document.querySelector("tr.selected");
+            if (!selectedRow) {
+                console.error("No row is selected.");
+                return;
+            }
+            const customerId = selectedRow.getAttribute("data-customer-id");
+            const customerName = selectedRow.querySelector("td:first-child").innerText;
+            document.getElementById("modalCustomerNameLink").innerText = customerName;
+            document.getElementById("customerIdInput").value = customerId;
+            $('#linkRoomModal').modal('show');
+        }
+
+        function linkRoom(roomId, roomName) {
+            document.getElementById('customerId').value = selectedCustomerId;
+            document.getElementById('roomId').value = roomId;
+            document.getElementById('roomName').value = roomName;
+            document.getElementById('linkRoomToCustomerForm').submit();
+        }
+
+        function closeDeal() {
+            document.getElementById('dealId').value = selectedCustomerId;
+            document.getElementById('closeDealForm').submit();
+        }
+
+        async function updateFilesList() {
+            const response = await fetch(`/WorkingWithRooms?handler=LinkedRoomInfo&customerId=${selectedCustomerId}`);
+            const result = await response.json();
+            if (result.success) {
+                const filesList = document.getElementById('filesList');
+                filesList.innerHTML = '';
+                result.files.forEach(file => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.textContent = file.name;
+                    li.addEventListener('click', () => window.open(file.webUrl, '_blank'));
+                    filesList.appendChild(li);
+                });
+                if (result.files.length === 0) {
+                    filesList.innerHTML = '<li class="list-group-item">No Files</li>';
+                }
+            } else {
+                alert("Error updating file list.");
+            }
+        }
+    </script>
+}

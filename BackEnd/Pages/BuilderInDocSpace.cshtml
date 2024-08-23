@@ -1,0 +1,21 @@
+﻿@page
+@model BackEnd.Pages.BuilderInDocSpaceModel
+@{
+}
+<div id="placeholder"></div>
+<script type="text/javascript" src="https://doc-eu.onlyoffice.com/web-apps/apps/api/documents/api.js"></script>
+<script>
+    var docEditor = new DocsAPI.DocEditor("placeholder", config);
+    config = {
+        "document": {
+            "fileType": "docx",
+            "key": "Khirz6zTPdfd7",
+            "title": "Example Document Title.docx",
+            "url": "https://example.com/url-to-example-document.docx"
+        },
+        "documentType": "word",
+        "editorConfig": {
+            "callbackUrl": "https://example.com/url-to-callback.ashx"
+        }
+    };
+</script>

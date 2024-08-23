@@ -1,0 +1,198 @@
+﻿@page
+@model BackEnd.Pages.UploadLargeFilesModel
+@{
+
+}
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    .attachments {
+        width: 700px; /* Ширина контейнера с файлами и кнопкой */
+        padding: 20px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Тень контейнера */
+        display: flex; /* Делаем контейнер flex-контейнером */
+        flex-direction: column; /* Располагаем элементы в столбец */
+        align-items: center; /* Центрируем элементы по горизонтали в контейнере */
+        margin: auto; /* Центрируем контейнер */
+    }
+
+    .files-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #fff;
+        width: 100%; /* Занимает всю ширину контейнера attachments */
+        margin-bottom: 10px; /* Добавляем небольшой отступ снизу */
+    }
+
+    .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+        transition: background-color 0.3s;
+        cursor: pointer;
+        width: 100%; /* Занимает всю ширину контейнера files-container */
+    }
+
+        .file-item:hover {
+            background-color: #f1f1f1;
+        }
+
+    .file-name {
+        font-size: 14px;
+        color: #333;
+        flex: 1; /* Занимать все доступное пространство */
+    }
+
+    .upload-button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 10px 20px; /* Увеличиваем отступы кнопки */
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+        .upload-button:hover {
+            background-color: #0056b3;
+        }
+
+    .modal-header {
+        background-color: #007bff;
+        color: #fff;
+        border-bottom: none;
+    }
+
+    .modal-content {
+        border: 1px solid rgba(0, 123, 255, 0.2);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-footer {
+        border-top: none;
+    }
+
+    .modal-title {
+        color: #ffffff;
+    }
+
+    .active-operations {
+        width: 700px;
+        padding: 20px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    .operations-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #fff;
+        width: 100%;
+    }
+
+    .operation-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+        transition: background-color 0.3s;
+        width: 100%;
+    }
+
+    .operation-name {
+        font-size: 14px;
+        color: #333;
+        flex: 1;
+    }
+
+    .terminate-button {
+        background-color: #dc3545;
+        color: #fff;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+        .terminate-button:hover {
+            background-color: #c82333;
+        }
+</style>
+
+<div class="attachments">
+    <h4>DocSpace Files</h4>
+    <div class="files-container">
+        @foreach (var file in FilesStore.AvailableFiles)
+        {
+            <div class="file-item" onclick="attachFile(@file.Id, '@file.Name')">
+                <span class="file-name">@file.Name</span>
+            </div>
+        }
+    </div>
+    <button class="upload-button" onclick="openUploadModal()">Upload</button>
+</div>
+
+<div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <form method="post" enctype="multipart/form-data" asp-page-handler="UploadFile">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="uploadModalLabel">Upload File</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="file" class="col-form-label">Choose file:</label>
+                        <input type="file" class="form-control-file" id="file" name="file">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        function openUploadModal() {
+            $('#uploadModal').modal('show');
+        }
+    </script>
+}
