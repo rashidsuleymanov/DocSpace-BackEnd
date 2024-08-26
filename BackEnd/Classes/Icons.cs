@@ -1,0 +1,26 @@
+﻿using System.Xml.Linq;
+
+namespace BackEnd.Classes
+{
+    public class Icons
+    {
+        private static readonly Dictionary<string, string> fileIcons = new Dictionary<string, string>
+        {
+            { "DOCX", "<svg width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M4 1L19 1L28 9V31H4V1Z\" fill=\"white\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M4.00003 31H28V9L19 1L4.08336 1.06667L4.00003 31ZM19 0H3.00003V32H29V9L19 0Z\" fill=\"#BFBFBF\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M6 21C6 20.4477 6.44772 20 7 20H25C25.5523 20 26 20.4477 26 21V28C26 28.5523 25.5523 29 25 29H7C6.44772 29 6 28.5523 6 28V21ZM22 22H21V24H22V25H21V27H22V25H24V27H25V25H24V24H25V22H24V24H22V22ZM7 27V22H10V23H8V26H10V27H7ZM10 26V23H11V26H10ZM20 22H18V23H17V26H18V27H20V26H18V23H20V22ZM13 23V22H15V23H13ZM13 26H12V23H13V26ZM15 26V27H13V26H15ZM15 26H16V23H15V26Z\" fill=\"#1E7AAA\"/><path d=\"M18 4H6V6H18V4Z\" fill=\"#C4C4C4\"/><path d=\"M18 8H6V10H18V8Z\" fill=\"#C4C4C4\"/><path d=\"M26 12H6V14H26V12Z\" fill=\"#C4C4C4\"/><path d=\"M6 16H20V18H6V16Z\" fill=\"#C4C4C4\"/><path opacity=\"0.3\" d=\"M17 11V1H18V10H28V11H17Z\" fill=\"black\"/></svg>" },
+            { "XLSX", "<svg width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M4 1H19L28 9L28.1676 31H4V1Z\" fill=\"white\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M4 31H28.148L28 9L19 1L4.08333 1.06667L4 31ZM19 0H3V32H29V9L19 0Z\" fill=\"#BFBFBF\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M6 21C6 20.4477 6.44772 20 7 20H25C25.5523 20 26 20.4477 26 21V28C26 28.5523 25.5523 29 25 29H7C6.44772 29 6 28.5523 6 28V21ZM13 22H12V27H15V26H13V22ZM17 22H19V23H17V22ZM17 24H16V23H17V24ZM19 25H17V24H19V25ZM19 26V25H20V26H19ZM19 26V27H16V26H19ZM11 22H10V24H8V22H7V24H8V25H7V27H8V25H10V27H11V25H10V24H11V22ZM24 22H25V24H24V22ZM24 25V24H22V22H21V24H22V25H21V27H22V25H24ZM24 25H25V27H24V25Z\" fill=\"#6AAA1E\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M6 18H26V10H25V13H20V10H19V13H13V10H18V9H13V6H18V5H6V18ZM12 6V9H7V6H12ZM7 10H12V13H7V10ZM7 14H12V17H7V14ZM19 14H13V17H19V14ZM20 17V14H25V17H20Z\" fill=\"#BFBFBF\"/><path opacity=\"0.3\" d=\"M17 11V1H18V10H28V11H17Z\" fill=\"black\"/></svg>" },
+            { "PDF", "<svg width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M4 1H19L28 9L28.1676 31H4V1Z\" fill=\"white\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M4 31H28.148L28 9L19 1L4.08333 1.06667L4 31ZM19 0H3V32H29V9L19 0Z\" fill=\"#BFBFBF\"/><path d=\"M9 23H11V24H9V23Z\" fill=\"#9E1919\"/><path d=\"M17 23V26H15V23H17Z\" fill=\"#9E1919\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M7 20C6.44772 20 6 20.4477 6 21V28C6 28.5523 6.44772 29 7 29H25C25.5523 29 26 28.5523 26 28V21C26 20.4477 25.5523 20 25 20H7ZM8 27V22H12V25H9V27H8ZM14 22V27H17V26H18V23H17V22H14ZM24 22H20V27H21V25H23V24H21V23H24V22Z\" fill=\"#9E1919\"/><path d=\"M16 4H18V6H16V4Z\" fill=\"#BFBFBF\"/><path d=\"M18 8H16V10H18V8Z\" fill=\"#BFBFBF\"/><path d=\"M26 12H16V14H26V12Z\" fill=\"#BFBFBF\"/><path d=\"M26 16V18H6V16H26Z\" fill=\"#BFBFBF\"/><path d=\"M6 4H14V14H6V4Z\" fill=\"#BFBFBF\"/><path opacity=\"0.3\" d=\"M17 11V1H18V10H28V11H17Z\" fill=\"black\"/></svg>" },
+            { "PPTX", "<svg width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M4 1H19L28 9L28.1676 31H4V1Z\" fill=\"white\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M4 31H28.148L28 9L19 1L4.08333 1.06667L4 31ZM19 0H3V32H29V9L19 0Z\" fill=\"#BFBFBF\"/><path d=\"M9 23H8V24H9V23Z\" fill=\"#F36700\"/><path d=\"M12 23H13V24H12V23Z\" fill=\"#F36700\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M6 21C6 20.4477 6.44771 20 7 20H25C25.5523 20 26 20.4477 26 21V28C26 28.5523 25.5523 29 25 29H7C6.44772 29 6 28.5523 6 28V21ZM22 22H21V24H22V25H21V27H22V25H24V27H25V25H24V24H25V22H24V24H22V22ZM15 22H20V23H18V27H17V23H15V22ZM7 22V27H8V25H10V22H7ZM11 27V22H14V25H12V27H11Z\" fill=\"#F36700\"/><path d=\"M6 4V18H26V10H25V17H7V5H18V4H6Z\" fill=\"#BFBFBF\"/><path d=\"M18 7H16V6H12V8H18V7Z\" fill=\"#BFBFBF\"/><path d=\"M10 6H8V8H10V6Z\" fill=\"#BFBFBF\"/><path d=\"M17 10V11H15V12H12V10H17Z\" fill=\"#BFBFBF\"/><path d=\"M10 14H8V16H10V14Z\" fill=\"#BFBFBF\"/><path d=\"M12 14H15V15H23V16H12V14Z\" fill=\"#BFBFBF\"/><path d=\"M10 10H8V12H10V10Z\" fill=\"#BFBFBF\"/><path opacity=\"0.3\" d=\"M17 11V1H18V10H28V11H17Z\" fill=\"black\"/></svg>" },
+            { "FOLDER", "<svg width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect y=\"8\" width=\"30\" height=\"20\" rx=\"2\" fill=\"#B2BBC0\"/><path d=\"M0 4C0 2.89543 0.895431 2 2 2H11C12.1046 2 13 2.89543 13 4V6H28C29.1046 6 30 6.89543 30 8V10C30 8.89543 29.1046 8 28 8H2C0.895431 8 0 8.89543 0 10V4Z\" fill=\"#788790\"/></svg>" }
+        };
+        public string GetIcon(string fileName)
+        {
+            string extension = fileName.Split('.')[^1].ToUpper();
+            if (fileIcons.ContainsKey(extension))
+            {
+                return fileIcons[extension];
+            }
+
+            return string.Empty; // Возвращаем пустую строку, если иконка не найдена
+        }
+    }
+}

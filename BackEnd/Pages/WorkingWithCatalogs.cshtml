@@ -13,20 +13,47 @@
         min-height: 100vh;
     }
 
-    .rooms {
-        width: 700px; /* Width of the file and button container */
+    .btn-show-popup {
+        background-color: #0078D4;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 5px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+    /* Стили для всплывающего меню */
+    .popup {
+        position: absolute;
+        background-color: #ffffff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        padding: 10px;
+        z-index: 1000; /* Обеспечивает, что меню будет поверх других элементов */
+    }
+
+        .popup .btn {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+    .tables {
+        width: 700px;
         padding: 20px;
         background-color: #fff;
         border: 1px solid #ccc;
         border-radius: 4px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Container shadow */
-        display: flex; /* Making the container a flex container */
-        flex-direction: column; /* Arrange items in a column */
-        align-items: center; /* Center items horizontally */
-        margin: auto; /* Center container */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: auto;
     }
 
-    .rooms-container {
+    .table-container {
         display: flex;
         flex-direction: column;
         gap: 2px;
@@ -36,11 +63,11 @@
         border: 1px solid #ccc;
         border-radius: 4px;
         background-color: #fff;
-        width: 100%; /* Full width of the rooms container */
-        margin-bottom: 10px; /* Margin below the container */
+        width: 100%;
+        margin-bottom: 10px;
     }
 
-    .room-item {
+    .table-item {
         display: flex;
         align-items: center;
         padding: 10px;
@@ -48,15 +75,15 @@
         background-color: #f9f9f9;
         transition: background-color 0.3s;
         cursor: pointer;
-        width: 100%; /* Full width of the container */
-        position: relative; /* For positioning the colored square */
+        width: 100%;
+        position: relative;
     }
 
-        .room-item:hover {
+        .table-item:hover {
             background-color: #f1f1f1;
         }
 
-    .room-icon {
+    .table-icon {
         width: 30px;
         height: 30px;
         display: flex;
@@ -68,36 +95,205 @@
         font-size: 16px;
         text-align: center;
         line-height: 30px;
-        border-radius: 4px; /* Сделать квадрат с закругленными углами */
+        border-radius: 4px;
     }
 
-    .room-name {
+    .table-name {
         font-size: 14px;
         color: #333;
-        flex: 1; /* Takes all available space */
+        flex: 1;
     }
+
+    .btn-back {
+        display: inline-block;
+        padding: 10px 20px;
+        margin-top: 10px;
+        background-color: #0078D4; /* Цвет фона */
+        color: white; /* Цвет текста */
+        border: none; /* Убираем рамку */
+        border-radius: 5px; /* Скругленные углы */
+        font-size: 14px; /* Размер шрифта */
+        font-weight: bold; /* Жирный шрифт */
+        cursor: pointer; /* Курсор в виде руки */
+        transition: background-color 0.3s ease; /* Плавный переход цвета фона при наведении */
+    }
+
+        .btn-back:hover {
+            background-color: #005A9E; /* Темнее цвет при наведении */
+        }
+
+        .btn-back:focus {
+            outline: none; /* Убираем обводку при фокусе */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* Тень при фокусе */
+        }
 </style>
 
-<div class="rooms">
-    <h4>DocSpace rooms</h4>
-    <div class="rooms-container">
+<div class="tables">
+    <h4>DocSpace table</h4>
+    <div class="table-container" id="roomsTable">
         @foreach (var room in RoomStore.RoomsList)
         {
-            <div class="room-item" onclick="handleRoomClick('@room.Id')">
-                <div class="room-icon" style="background-color: @ColorHelper.GetColorForRoom(room.Name)">
+            <div class="table-item" onclick="handleRoomClick(@room.Id)">
+                <div class="table-icon" style="background-color: @ColorHelper.GetColorForRoom(room.Name)">
                     @room.Name[0]
                 </div>
-                <span class="room-name">@room.Name</span>
+                <span class="table-name">@room.Name</span>
             </div>
         }
     </div>
+    <div class="table-container" id="subfolderdTable" style="display: none">
+        <!-- Этот контейнер будет заполняться через JavaScript -->
+    </div>
+    <ul id="filesContainer" class="list-group"></ul>
+
+    <!-- Добавляем кнопку для возврата к списку комнат -->
+    <button id="backToRoomsButton" class="btn-back" style="display: none;">Back to Rooms</button>
 </div>
-<form id="selectRoomForm" method="post" asp-page-handler="LinkedRoomInfo">
-    <input type="hidden" name="roomId" id="roomId" />
-</form>
+<div class="popup" id="popupMenu" style="display: none;">
+    <button class="btn btn-primary" onclick="openCreateFileModal()">Move to</button>
+    <div style="margin-top: 5px;"></div>
+    <button class="btn btn-primary" onclick="loadFilesAndShowModal()">Copy</button>
+</div>
+
 <script>
-    function handleRoomClick(roomId) {
-        document.getElementById("roomId").value = roomId;
-        document.getElementById('selectRoomForm').submit();
-    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Обработчик клика для элементов таблицы
+        async function handleRoomClick(roomId) {
+            try {
+                const response = await fetch(`/WorkingWithCatalogs?handler=RoomInfo&roomId=${roomId}`);
+                const result = await response.json();
+                if (result.success) {
+                    const filesList = document.getElementById('filesContainer');
+                    const backToRoomsButton = document.getElementById('backToRoomsButton');
+                    if (filesList) {
+                        filesList.innerHTML = ''; // Очищаем контейнер перед добавлением новых данных
+
+                        if (Array.isArray(result.files)) {
+                            renderRoomTableItems(result.files);
+                            backToRoomsButton.style.display = 'block'; // Показываем кнопку возврата
+                        } else {
+                            console.error('result.files не является массивом');
+                            filesList.innerHTML = '<li class="list-group-item">Error loading files</li>';
+                        }
+                    } else {
+                        console.error('filesContainer не найден в DOM');
+                    }
+                } else {
+                    alert("Error updating file list.");
+                }
+            } catch (error) {
+                console.error("Ошибка при запросе данных:", error);
+                alert("Error linking room to customer.");
+            }
+        }
+
+        // Функция для рендеринга элементов таблицы файлов
+        function renderRoomTableItems(files) {
+            const tableContainer = document.getElementById('subfolderdTable');
+            const roomsTable = document.getElementById('roomsTable');
+            tableContainer.innerHTML = ''; // Очищаем контейнер перед заполнением
+
+            files.forEach(file => {
+                const tableItem = document.createElement('div');
+                tableItem.className = 'table-item';
+
+                // Создаем кнопку для показа меню
+                const showPopupButton = document.createElement('button');
+                showPopupButton.className = 'btn-show-popup';
+                showPopupButton.textContent = '...'; // Символ для кнопки
+                showPopupButton.onclick = (event) => {
+                    event.stopPropagation(); // Останавливаем распространение события клика
+                    showPopupMenu(event, file);
+                };
+
+                const tableIcon = document.createElement('div');
+                tableIcon.className = 'table-icon';
+                tableIcon.style.fontSize = '9px';
+                tableIcon.innerHTML = file.icon;
+
+                const tableName = document.createElement('span');
+                tableName.className = 'table-name';
+                tableName.textContent = file.name;
+
+                tableItem.appendChild(tableIcon);
+                tableItem.appendChild(tableName);
+                 // Добавляем кнопку в элемент таблицы
+
+                if (file.webUrl) {
+                    tableItem.appendChild(showPopupButton);
+                    tableItem.onclick = function () {
+                        window.open(file.webUrl, '_blank'); // Открываем ссылку в новой вкладке
+                    };
+                }
+
+                tableContainer.appendChild(tableItem);
+            });
+
+            tableContainer.style.display = 'block';
+            roomsTable.style.display = 'none';
+        }
+
+
+        // Функция для показа всплывающего меню
+        function showPopupMenu(event, file) {
+            const popupMenu = document.getElementById('popupMenu');
+            popupMenu.style.display = 'block';
+            popupMenu.style.left = `${event.pageX}px`;
+            popupMenu.style.top = `${event.pageY}px`;
+            popupMenu.dataset.fileUrl = file.webUrl; // Сохраняем URL файла для использования в модальных окнах
+        }
+
+        // Функция для скрытия всплывающего меню
+        document.addEventListener('click', function (event) {
+            const popupMenu = document.getElementById('popupMenu');
+            if (!popupMenu.contains(event.target) && !event.target.classList.contains('btn-show-popup')) {
+                popupMenu.style.display = 'none';
+            }
+        });
+
+        // Функция для получения цвета в зависимости от расширения файла
+        function getColorForRoom(fileName) {
+            const extension = fileName.split('.').pop().toLowerCase();
+
+            const colors = {
+                'doc': '#0078D4',
+                'docx': '#0078D4',
+                'xls': '#217346',
+                'xlsx': '#217346',
+                'ppt': '#D24726',
+                'pptx': '#D24726',
+                'pdf': '#FF0000',
+                'txt': '#000000',
+                'csv': '#FFD700',
+                'png': '#FFA500',
+                'jpg': '#FFA500',
+                'jpeg': '#FFA500',
+                'gif': '#FFA500',
+                'default': '#808080'
+            };
+
+            return colors[extension] || colors['default'];
+        }
+
+        // Привязка обработчиков к элементам
+        document.querySelectorAll('.table-item').forEach(item => {
+            item.addEventListener('click', function () {
+                const roomId = this.getAttribute('onclick').match(/\d+/)[0];
+                handleRoomClick(roomId);
+            });
+        });
+
+        // Добавляем обработчик для кнопки возврата
+        document.getElementById('backToRoomsButton').addEventListener('click', () => {
+            const tableContainer = document.getElementById('subfolderdTable');
+            const roomsTable = document.getElementById('roomsTable');
+            const backToRoomsButton = document.getElementById('backToRoomsButton');
+
+            tableContainer.style.display = 'none';  // Скрываем контейнер с файлами
+            roomsTable.style.display = 'block';     // Показываем контейнер с комнатами
+            backToRoomsButton.style.display = 'none'; // Скрываем кнопку возврата
+        });
+    });
 </script>
+

@@ -1,3 +1,4 @@
+using BackEnd.Classes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net;
@@ -7,11 +8,11 @@ namespace BackEnd.Pages
 {
     public class WorkingWithCatalogsModel : PageModel
     {
-        public void OnGet()
+        public async void OnGet()
         {
-            GetRoomsListAsync();
+            await GetRoomsListAsync();
         }
-        public async Task<IActionResult> OnPostLinkedRoomInfoAsync(int roomId)
+        public async Task<IActionResult> OnGetRoomInfoAsync(int roomId)
         {
             try
             {
@@ -23,7 +24,7 @@ namespace BackEnd.Pages
             {
                 // Логирование ошибки
                 Console.Error.WriteLine(ex.Message);
-                return StatusCode(500, "Error linking room to customer.");
+                return StatusCode(500, "Test.");
             }
         }
         private async Task GetRoomsListAsync()
@@ -65,16 +66,28 @@ namespace BackEnd.Pages
             {
                 var responseString = await streamReader.ReadToEndAsync();
                 var jsonDoc = JsonDocument.Parse(responseString);
+                var icons = new Icons();
                 FilesStore.AvailableFiles = jsonDoc.RootElement.GetProperty("response")
+                    .GetProperty("folders")
+                    .EnumerateArray()
+                    .Select(folder => new FilesStore.AvailableFile
+                    {
+                        Id = folder.GetProperty("id").GetInt32(),
+                        Name = folder.GetProperty("title").GetString(),
+                        Icon = icons.GetIcon("Folder")
+                    })
+                    .ToList();
+                FilesStore.AvailableFiles.AddRange(jsonDoc.RootElement.GetProperty("response")
                     .GetProperty("files")
                     .EnumerateArray()
                     .Select(file => new FilesStore.AvailableFile
                     {
                         Id = file.GetProperty("id").GetInt32(),
                         Name = file.GetProperty("title").GetString(),
-                        WebUrl = file.GetProperty("webUrl").GetString()
+                        WebUrl = file.GetProperty("webUrl").GetString(),
+                        Icon = icons.GetIcon(file.GetProperty("title").GetString())
                     })
-                    .ToList();
+                    .ToList());
             }
         }
     }
