@@ -23,7 +23,6 @@
         cursor: pointer;
     }
 
-    /* Стили для всплывающего меню */
     .popup {
         position: absolute;
         background-color: #ffffff;
@@ -31,7 +30,8 @@
         border-radius: 4px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         padding: 10px;
-        z-index: 1000; /* Обеспечивает, что меню будет поверх других элементов */
+        z-index: 1000;
+        display: none;
     }
 
         .popup .btn {
@@ -108,23 +108,84 @@
         display: inline-block;
         padding: 10px 20px;
         margin-top: 10px;
-        background-color: #0078D4; /* Цвет фона */
-        color: white; /* Цвет текста */
-        border: none; /* Убираем рамку */
-        border-radius: 5px; /* Скругленные углы */
-        font-size: 14px; /* Размер шрифта */
-        font-weight: bold; /* Жирный шрифт */
-        cursor: pointer; /* Курсор в виде руки */
-        transition: background-color 0.3s ease; /* Плавный переход цвета фона при наведении */
+        background-color: #0078D4;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
     }
 
         .btn-back:hover {
-            background-color: #005A9E; /* Темнее цвет при наведении */
+            background-color: #005A9E;
         }
 
         .btn-back:focus {
-            outline: none; /* Убираем обводку при фокусе */
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* Тень при фокусе */
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 1000;
+    }
+
+    .side-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 100%;
+        background-color: #fff;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+        overflow-x: hidden;
+        transition: 0.3s;
+        z-index: 1100;
+    }
+
+    .side-panel-content {
+        padding: 20px;
+    }
+
+    .side-panel .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 25px;
+        font-size: 36px;
+        cursor: pointer;
+    }
+
+    .side-panel .room-list {
+        margin-top: 30px;
+    }
+
+    .side-panel .room-item {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+        .side-panel .room-item:hover {
+            background-color: #f0f0f0;
+        }
+
+    .side-panel-footer {
+        position: absolute;
+        bottom: 20px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+    }
+
+        .side-panel-footer button {
+            margin: 5px;
         }
 </style>
 
@@ -133,7 +194,7 @@
     <div class="table-container" id="roomsTable">
         @foreach (var room in RoomStore.RoomsList)
         {
-            <div class="table-item" onclick="handleRoomClick(@room.Id)">
+            <div class="table-item" data-room-id="@room.Id">
                 <div class="table-icon" style="background-color: @ColorHelper.GetColorForRoom(room.Name)">
                     @room.Name[0]
                 </div>
@@ -141,159 +202,246 @@
             </div>
         }
     </div>
-    <div class="table-container" id="subfolderdTable" style="display: none">
-        <!-- Этот контейнер будет заполняться через JavaScript -->
-    </div>
+    <div class="table-container" id="subfolderdTable" style="display: none;"></div>
     <ul id="filesContainer" class="list-group"></ul>
 
-    <!-- Добавляем кнопку для возврата к списку комнат -->
     <button id="backToRoomsButton" class="btn-back" style="display: none;">Back to Rooms</button>
 </div>
+
 <div class="popup" id="popupMenu" style="display: none;">
-    <button class="btn btn-primary" onclick="openCreateFileModal()">Move to</button>
+    <button class="btn btn-primary" onclick="openSidePanel()">Move to</button>
     <div style="margin-top: 5px;"></div>
-    <button class="btn btn-primary" onclick="loadFilesAndShowModal()">Copy</button>
+    <button class="btn btn-primary" onclick="openSidePanel()">Copy</button>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="side-panel" id="sidePanel">
+    <span class="close-btn" onclick="closeSidePanel()">&times;</span>
+    <div class="side-panel-content">
+        <h4>Select Room</h4>
+        <div class="table-container" id="destTable">
+        @foreach (var room in RoomStore.RoomsList)
+        {
+            <div class="table-item" data-room-id="@room.Id">
+                <div class="table-icon" style="background-color: @ColorHelper.GetColorForRoom(room.Name)">
+                    @room.Name[0]
+                </div>
+                <span class="table-name">@room.Name</span>
+            </div>
+        }
+    </div>
+        <div class="side-panel-footer">
+            <button class="btn btn-primary" onclick="performAction()">Execute Action</button>
+            <button class="btn btn-secondary" onclick="closeSidePanel()">Close</button>
+        </div>
+    </div>
 </div>
 
 <script>
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        // Обработчик клика для элементов таблицы
-        async function handleRoomClick(roomId) {
-            try {
-                const response = await fetch(`/WorkingWithCatalogs?handler=RoomInfo&roomId=${roomId}`);
-                const result = await response.json();
-                if (result.success) {
-                    const filesList = document.getElementById('filesContainer');
-                    const backToRoomsButton = document.getElementById('backToRoomsButton');
-                    if (filesList) {
-                        filesList.innerHTML = ''; // Очищаем контейнер перед добавлением новых данных
+    // Функция обработчика клика по элементу комнаты
+    let destFolder;
+    let currentFolder;
+    function selectDestFolder (roomId){
+        destFolder = roomId
+    }
 
-                        if (Array.isArray(result.files)) {
-                            renderRoomTableItems(result.files);
-                            backToRoomsButton.style.display = 'block'; // Показываем кнопку возврата
-                        } else {
-                            console.error('result.files не является массивом');
-                            filesList.innerHTML = '<li class="list-group-item">Error loading files</li>';
-                        }
+    async function handleRoomClick(roomId) {
+        try {
+            currentFolder = roomId
+            const response = await fetch(`/WorkingWithCatalogs?handler=RoomInfo&roomId=${roomId}`);
+            const result = await response.json();
+            if (result.success) {
+                const filesList = document.getElementById('filesContainer');
+                const backToRoomsButton = document.getElementById('backToRoomsButton');
+                if (filesList) {
+                    filesList.innerHTML = '';
+
+                    if (Array.isArray(result.files)) {
+                        renderRoomTableItems(result.files);
+                        backToRoomsButton.style.display = 'block';
                     } else {
-                        console.error('filesContainer не найден в DOM');
+                        console.error('result.files не является массивом');
+                        filesList.innerHTML = '<li class="list-group-item">Error loading files</li>';
                     }
                 } else {
-                    alert("Error updating file list.");
+                    console.error('filesContainer не найден в DOM');
                 }
-            } catch (error) {
-                console.error("Ошибка при запросе данных:", error);
-                alert("Error linking room to customer.");
+            } else {
+                alert("Error updating file list.");
             }
+        } catch (error) {
+            console.error("Ошибка при запросе данных:", error);
+            alert("Error linking room to customer.");
+        }
+    }
+
+    // Функция рендеринга элементов таблицы файлов
+    function renderRoomTableItems(files) {
+        const tableContainer = document.getElementById('subfolderdTable');
+        const roomsTable = document.getElementById('roomsTable');
+        tableContainer.innerHTML = ''; // Очищаем контейнер перед заполнением
+
+        if (!Array.isArray(files)) {
+            console.error('files не является массивом или является пустым.');
+            tableContainer.innerHTML = '<div>Error loading files</div>';
+            return;
         }
 
-        // Функция для рендеринга элементов таблицы файлов
-        function renderRoomTableItems(files) {
-            const tableContainer = document.getElementById('subfolderdTable');
-            const roomsTable = document.getElementById('roomsTable');
-            tableContainer.innerHTML = ''; // Очищаем контейнер перед заполнением
-
-            files.forEach(file => {
-                const tableItem = document.createElement('div');
-                tableItem.className = 'table-item';
-
-                // Создаем кнопку для показа меню
-                const showPopupButton = document.createElement('button');
-                showPopupButton.className = 'btn-show-popup';
-                showPopupButton.textContent = '...'; // Символ для кнопки
-                showPopupButton.onclick = (event) => {
-                    event.stopPropagation(); // Останавливаем распространение события клика
-                    showPopupMenu(event, file);
-                };
-
-                const tableIcon = document.createElement('div');
-                tableIcon.className = 'table-icon';
-                tableIcon.style.fontSize = '9px';
-                tableIcon.innerHTML = file.icon;
-
-                const tableName = document.createElement('span');
-                tableName.className = 'table-name';
-                tableName.textContent = file.name;
-
-                tableItem.appendChild(tableIcon);
-                tableItem.appendChild(tableName);
-                 // Добавляем кнопку в элемент таблицы
-
-                if (file.webUrl) {
-                    tableItem.appendChild(showPopupButton);
-                    tableItem.onclick = function () {
-                        window.open(file.webUrl, '_blank'); // Открываем ссылку в новой вкладке
-                    };
-                }
-
-                tableContainer.appendChild(tableItem);
-            });
-
-            tableContainer.style.display = 'block';
-            roomsTable.style.display = 'none';
-        }
-
-
-        // Функция для показа всплывающего меню
-        function showPopupMenu(event, file) {
-            const popupMenu = document.getElementById('popupMenu');
-            popupMenu.style.display = 'block';
-            popupMenu.style.left = `${event.pageX}px`;
-            popupMenu.style.top = `${event.pageY}px`;
-            popupMenu.dataset.fileUrl = file.webUrl; // Сохраняем URL файла для использования в модальных окнах
-        }
-
-        // Функция для скрытия всплывающего меню
-        document.addEventListener('click', function (event) {
-            const popupMenu = document.getElementById('popupMenu');
-            if (!popupMenu.contains(event.target) && !event.target.classList.contains('btn-show-popup')) {
-                popupMenu.style.display = 'none';
+        files.forEach(file => {
+            // Проверяем наличие всех необходимых полей в файле
+            if (!file || !file.icon || !file.name) {
+                console.error('Некорректные данные файла:', file);
+                return;
             }
-        });
 
-        // Функция для получения цвета в зависимости от расширения файла
-        function getColorForRoom(fileName) {
-            const extension = fileName.split('.').pop().toLowerCase();
+            const tableItem = document.createElement('div');
+            tableItem.className = 'table-item';
 
-            const colors = {
-                'doc': '#0078D4',
-                'docx': '#0078D4',
-                'xls': '#217346',
-                'xlsx': '#217346',
-                'ppt': '#D24726',
-                'pptx': '#D24726',
-                'pdf': '#FF0000',
-                'txt': '#000000',
-                'csv': '#FFD700',
-                'png': '#FFA500',
-                'jpg': '#FFA500',
-                'jpeg': '#FFA500',
-                'gif': '#FFA500',
-                'default': '#808080'
+            // Создаем кнопку для показа меню
+            const showPopupButton = document.createElement('button');
+            showPopupButton.className = 'btn-show-popup';
+            showPopupButton.textContent = '...'; // Символ для кнопки
+            showPopupButton.onclick = (event) => {
+                event.stopPropagation(); // Останавливаем распространение события клика
+                showPopupMenu(event, file);
             };
 
-            return colors[extension] || colors['default'];
-        }
+            const tableIcon = document.createElement('div');
+            tableIcon.className = 'table-icon';
+            tableIcon.style.fontSize = '12px';
 
-        // Привязка обработчиков к элементам
+            // Установка иконки файла
+            tableIcon.innerHTML = file.icon || ''; // Используем пустую строку как запасной вариант
+
+            const tableName = document.createElement('span');
+            tableName.className = 'table-name';
+            tableName.textContent = file.name || 'Unknown'; // Используем 'Unknown', если имя не задано
+
+            // Устанавливаем атрибут onclick для открытия ссылки в новой вкладке
+            if (file.webUrl) {
+                tableItem.onclick = function () {
+                    window.open(file.webUrl, '_blank'); // Открываем ссылку в новой вкладке
+                };
+            }
+
+            // Добавляем элементы в правильном порядке
+            tableItem.appendChild(tableIcon);
+            tableItem.appendChild(tableName);
+            tableItem.appendChild(showPopupButton); // Кнопка идет последней
+
+            tableContainer.appendChild(tableItem);
+        });
+
+        tableContainer.style.display = 'block';
+        roomsTable.style.display = 'none';
+    }
+
+    // Привязка обработчиков событий после загрузки страницы
+    document.addEventListener('DOMContentLoaded', () => {
+        // Привязка обработчиков для элементов таблицы
         document.querySelectorAll('.table-item').forEach(item => {
             item.addEventListener('click', function () {
-                const roomId = this.getAttribute('onclick').match(/\d+/)[0];
+                const roomId = this.dataset.roomId;
                 handleRoomClick(roomId);
             });
         });
+        document.addEventListener('DOMContentLoaded', () => {
+            // Привязка обработчиков для элементов таблицы
+            document.querySelectorAll('destTable').forEach(item => {
+                item.addEventListener('click', function () {
+                    const roomId = this.dataset.roomId;
+                    selectDestFolder(roomId);
+                });
+            });
 
-        // Добавляем обработчик для кнопки возврата
-        document.getElementById('backToRoomsButton').addEventListener('click', () => {
-            const tableContainer = document.getElementById('subfolderdTable');
+        // Обработчик кнопки "Назад к списку комнат"
+        document.getElementById('backToRoomsButton').addEventListener('click', function () {
             const roomsTable = document.getElementById('roomsTable');
-            const backToRoomsButton = document.getElementById('backToRoomsButton');
-
-            tableContainer.style.display = 'none';  // Скрываем контейнер с файлами
-            roomsTable.style.display = 'block';     // Показываем контейнер с комнатами
-            backToRoomsButton.style.display = 'none'; // Скрываем кнопку возврата
+            const subfolderdTable = document.getElementById('subfolderdTable');
+            roomsTable.style.display = 'flex';
+            subfolderdTable.style.display = 'none';
+            this.style.display = 'none';
         });
     });
-</script>
 
+    // Прочие функции для работы с модальными окнами и панелями
+    function openSidePanel() {
+        document.getElementById('sidePanel').style.width = '480px'; // Увеличенная ширина
+        document.getElementById('overlay').style.display = 'block';
+
+        // Пример получения данных комнат, замените на фактический запрос
+        fetch('/WorkingWithCatalogs?handler=GetRooms')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderRoomList(data.rooms); // Отображаем список комнат
+                } else {
+                    console.error('Ошибка при загрузке списка комнат');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка запроса:', error);
+            });
+    }
+
+    function closeSidePanel() {
+        document.getElementById('sidePanel').style.width = '0';
+        document.getElementById('overlay').style.display = 'none';
+    }
+
+    function performAction() {
+        console.log(currentFolder)
+        console.log(destFolder)
+    }
+
+    // Функция для отображения меню
+    function showPopupMenu(event, file) {
+        const popupMenu = document.getElementById('popupMenu');
+        popupMenu.style.display = 'block';
+        popupMenu.style.left = `${event.clientX}px`;
+        popupMenu.style.top = `${event.clientY}px`;
+
+        // Скрыть меню при клике вне его области
+        document.addEventListener('click', handleDocumentClick);
+        popupMenu.addEventListener('click', (event) => event.stopPropagation());
+    }
+
+    // Обработчик клика вне области меню
+    function handleDocumentClick(event) {
+        const popupMenu = document.getElementById('popupMenu');
+        if (!popupMenu.contains(event.target)) {
+            popupMenu.style.display = 'none';
+            document.removeEventListener('click', handleDocumentClick);
+        }
+    }
+
+    // Функция рендеринга списка комнат в боковой панели
+    function renderRoomList(rooms) {
+        const roomList = document.getElementById('roomList');
+        roomList.innerHTML = ''; // Очищаем список перед добавлением новых элементов
+
+        if (!Array.isArray(rooms)) {
+            console.error('rooms не является массивом или является пустым.');
+            roomList.innerHTML = '<div>Error loading rooms</div>';
+            return;
+        }
+
+        rooms.forEach(room => {
+            if (!room || !room.name) {
+                console.error('Некорректные данные комнаты:', room);
+                return;
+            }
+
+            const roomItem = document.createElement('div');
+            roomItem.className = 'room-item';
+            roomItem.textContent = room.name;
+            roomItem.onclick = () => {
+                console.log('Room clicked:', room.name);
+                // Дополнительные действия при клике на комнату
+            };
+
+            roomList.appendChild(roomItem);
+        });
+    }
+</script>
