@@ -1,5 +1,9 @@
 ﻿@page
 @model BackEnd.Pages.WorkingWithCatalogsModel
+@using System.Text.Json
+@{
+    var roomsJson = JsonSerializer.Serialize(RoomStore.RoomsList);
+}
 
 <style>
     body {
@@ -187,6 +191,50 @@
         .side-panel-footer button {
             margin: 5px;
         }
+
+    .button-container {
+        text-align: center;
+        display: flex;
+        gap: 10px; 
+    }
+
+    .modal {
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0,0,0);
+        background-color: rgba(0,0,0,0.4);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 400px;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
 </style>
 
 <div class="tables">
@@ -204,14 +252,46 @@
     </div>
     <div class="table-container" id="subfolderdTable" style="display: none;"></div>
     <ul id="filesContainer" class="list-group"></ul>
-
-    <button id="backToRoomsButton" class="btn-back" style="display: none;">Back to Rooms</button>
+    <div id="buttonContainer" class="button-container">
+        <button id="createFolderButton" class="btn-back" style="display: none;">Create Folder</button>
+        <button id="backToRoomsButton" class="btn-back" style="display: none;">Back to Rooms</button>
+    </div>
 </div>
 
 <div class="popup" id="popupMenu" style="display: none;">
-    <button class="btn btn-primary" onclick="openSidePanel()">Move to</button>
+    <button class="btn btn-primary" onclick="showSidePanel('move')">Move to</button>
     <div style="margin-top: 5px;"></div>
-    <button class="btn btn-primary" onclick="openSidePanel()">Copy</button>
+    <button class="btn btn-primary" onclick="showSidePanel('copy')">Copy</button>
+    <div style="margin-top: 5px;"></div>
+    <button class="btn btn-primary" id="renameButton">Rename</button>
+    <div style="margin-top: 5px;"></div>
+    <button class="btn btn-primary" id="deleteButton"">Delete</button>
+</div>
+
+<div id="modalContainer" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2>Create Folder</h2>
+        <label for="folderTitle">Title:</label>
+        <input type="text" id="folderTitle" name="folderTitle" />
+        <br />
+        <div id="buttonContainer" class="button-container">
+            <button id="createFolder" class="btn-back">Create</button>
+            <button id="closeModalButton" class="btn-back">Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalRenameContainer" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2>Create Folder</h2>
+        <label for="renameTitleInput">Title:</label>
+        <input type="text" id="renameTitleInput" name="renameTitleInput" />
+        <br />
+        <div id="buttonContainer" class="button-container">
+            <button id="renameFolder" class="btn-back">Rename</button>
+            <button id="closeRenameModalButton" class="btn-back">Close</button>
+        </div>
+    </div>
 </div>
 
 <div class="overlay" id="overlay"></div>
@@ -220,17 +300,19 @@
     <span class="close-btn" onclick="closeSidePanel()">&times;</span>
     <div class="side-panel-content">
         <h4>Select Room</h4>
-        <div class="table-container" id="destTable">
-        @foreach (var room in RoomStore.RoomsList)
-        {
-            <div class="table-item" data-room-id="@room.Id">
-                <div class="table-icon" style="background-color: @ColorHelper.GetColorForRoom(room.Name)">
-                    @room.Name[0]
+        <div class="table-container" id="sidePanelRoomsTable">
+            @foreach (var room in RoomStore.RoomsList)
+            {
+                <div class="table-item" data-room-id="@room.Id">
+                    <div class="table-icon" style="background-color: @ColorHelper.GetColorForRoom(room.Name)">
+                        @room.Name[0]
+                    </div>
+                    <span class="table-name">@room.Name</span>
                 </div>
-                <span class="table-name">@room.Name</span>
-            </div>
-        }
-    </div>
+            }
+        </div>
+        <div class="table-container" id="subfolderdTable" style="display: none;"></div>
+        <ul id="filesContainer" class="list-group"></ul>
         <div class="side-panel-footer">
             <button class="btn btn-primary" onclick="performAction()">Execute Action</button>
             <button class="btn btn-secondary" onclick="closeSidePanel()">Close</button>
@@ -239,21 +321,26 @@
 </div>
 
 <script>
-    // Функция обработчика клика по элементу комнаты
-    let destFolder;
+    let selectedId;
     let currentFolder;
-    function selectDestFolder (roomId){
-        destFolder = roomId
+    let destFolder;
+    let actionType;
+
+    function selectDestFolder(roomId) {
+        destFolder = roomId;
+        console.log(`Destination Folder selected: ${destFolder}`); // Для проверки
     }
 
     async function handleRoomClick(roomId) {
         try {
-            currentFolder = roomId
+            currentFolder = roomId;
             const response = await fetch(`/WorkingWithCatalogs?handler=RoomInfo&roomId=${roomId}`);
             const result = await response.json();
             if (result.success) {
                 const filesList = document.getElementById('filesContainer');
+                const createFolderButton = document.getElementById('createFolderButton');
                 const backToRoomsButton = document.getElementById('backToRoomsButton');
+                createFolderButton.style.display = 'block';
                 if (filesList) {
                     filesList.innerHTML = '';
 
@@ -276,11 +363,10 @@
         }
     }
 
-    // Функция рендеринга элементов таблицы файлов
     function renderRoomTableItems(files) {
         const tableContainer = document.getElementById('subfolderdTable');
         const roomsTable = document.getElementById('roomsTable');
-        tableContainer.innerHTML = ''; // Очищаем контейнер перед заполнением
+        tableContainer.innerHTML = '';
 
         if (!Array.isArray(files)) {
             console.error('files не является массивом или является пустым.');
@@ -289,7 +375,6 @@
         }
 
         files.forEach(file => {
-            // Проверяем наличие всех необходимых полей в файле
             if (!file || !file.icon || !file.name) {
                 console.error('Некорректные данные файла:', file);
                 return;
@@ -298,37 +383,32 @@
             const tableItem = document.createElement('div');
             tableItem.className = 'table-item';
 
-            // Создаем кнопку для показа меню
             const showPopupButton = document.createElement('button');
             showPopupButton.className = 'btn-show-popup';
-            showPopupButton.textContent = '...'; // Символ для кнопки
+            showPopupButton.textContent = '...';
             showPopupButton.onclick = (event) => {
-                event.stopPropagation(); // Останавливаем распространение события клика
-                showPopupMenu(event, file);
+                event.stopPropagation();
+                showPopupMenu(event, file.id);
             };
 
             const tableIcon = document.createElement('div');
             tableIcon.className = 'table-icon';
             tableIcon.style.fontSize = '12px';
-
-            // Установка иконки файла
-            tableIcon.innerHTML = file.icon || ''; // Используем пустую строку как запасной вариант
+            tableIcon.innerHTML = file.icon || '';
 
             const tableName = document.createElement('span');
             tableName.className = 'table-name';
-            tableName.textContent = file.name || 'Unknown'; // Используем 'Unknown', если имя не задано
+            tableName.textContent = file.name || 'Unknown';
 
-            // Устанавливаем атрибут onclick для открытия ссылки в новой вкладке
             if (file.webUrl) {
                 tableItem.onclick = function () {
-                    window.open(file.webUrl, '_blank'); // Открываем ссылку в новой вкладке
+                    window.open(file.webUrl, '_blank');
                 };
             }
 
-            // Добавляем элементы в правильном порядке
             tableItem.appendChild(tableIcon);
             tableItem.appendChild(tableName);
-            tableItem.appendChild(showPopupButton); // Кнопка идет последней
+            tableItem.appendChild(showPopupButton);
 
             tableContainer.appendChild(tableItem);
         });
@@ -337,52 +417,88 @@
         roomsTable.style.display = 'none';
     }
 
-    // Привязка обработчиков событий после загрузки страницы
     document.addEventListener('DOMContentLoaded', () => {
-        // Привязка обработчиков для элементов таблицы
-        document.querySelectorAll('.table-item').forEach(item => {
-            item.addEventListener('click', function () {
-                const roomId = this.dataset.roomId;
-                handleRoomClick(roomId);
-            });
-        });
-        document.addEventListener('DOMContentLoaded', () => {
-            // Привязка обработчиков для элементов таблицы
-            document.querySelectorAll('destTable').forEach(item => {
-                item.addEventListener('click', function () {
-                    const roomId = this.dataset.roomId;
-                    selectDestFolder(roomId);
-                });
-            });
+        const modal = document.getElementById('modalContainer');
+        const renameModal = document.getElementById('modalRenameContainer');
+        const openModalButton = document.getElementById('createFolderButton');
+        const openRenameModalButton = document.getElementById('renameButton');
+        const closeModalButton = document.getElementById('closeModalButton');
+        const createFolderButton = document.getElementById('createFolder');
+        const modalRenameContainer = document.getElementById("modalRenameContainer");
+        const renameFolderButton = document.getElementById("renameFolder");
+        const closeRenameModalButton = document.getElementById("closeRenameModalButton");
+        const deleteButton = document.getElementById("deleteButton");
 
-        // Обработчик кнопки "Назад к списку комнат"
+        closeRenameModalButton.addEventListener('click', () => {
+            renameModal.style.display = 'none';
+        });
+
+        openRenameModalButton.addEventListener('click', () => {
+            renameModal.style.display = 'flex';
+        });
+        
+        openModalButton.addEventListener('click', () => {
+            modal.style.display = 'flex'; // Показать модальное окно
+        });
+
+        closeModalButton.addEventListener('click', () => {
+            modal.style.display = 'none'; // Скрыть модальное окно
+        });
+
+        createFolderButton.addEventListener('click', () => {
+            const folderTitle = document.getElementById('folderTitle').value;
+            createFolder(folderTitle, currentFolder);
+            modal.style.display = 'none'; // Скрыть модальное окно
+        });
+
+        deleteButton.addEventListener('click', () => {
+            deleteFolder(selectedId);
+        });
+
+        renameFolderButton.addEventListener('click', () => {
+            const folderTitle = document.getElementById('renameTitleInput').value;
+            renameFolder(folderTitle, selectedId);
+            renameFolder.style.display = 'none'; // Скрыть модальное окно
+        });
+
+        // Закрыть модальное окно при клике вне его
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        document.getElementById('roomsTable').addEventListener('click', (event) => {
+            const target = event.target.closest('.table-item');
+            if (target) {
+                const roomId = target.dataset.roomId;
+                handleRoomClick(roomId);
+            }
+        });
+
+        document.getElementById('sidePanelRoomsTable').addEventListener('click', (event) => {
+            const target = event.target.closest('.table-item');
+            if (target) {
+                const roomId = target.dataset.roomId;
+                selectDestFolder(roomId);
+            }
+        });
+
         document.getElementById('backToRoomsButton').addEventListener('click', function () {
             const roomsTable = document.getElementById('roomsTable');
             const subfolderdTable = document.getElementById('subfolderdTable');
+            const createFolderButton = document.getElementById('createFolderButton');
             roomsTable.style.display = 'flex';
             subfolderdTable.style.display = 'none';
             this.style.display = 'none';
+            createFolderButton.style.display = 'none';
         });
     });
 
-    // Прочие функции для работы с модальными окнами и панелями
-    function openSidePanel() {
-        document.getElementById('sidePanel').style.width = '480px'; // Увеличенная ширина
+    function showSidePanel(action) {
+        actionType = action;
+        document.getElementById('sidePanel').style.width = '480px';
         document.getElementById('overlay').style.display = 'block';
-
-        // Пример получения данных комнат, замените на фактический запрос
-        fetch('/WorkingWithCatalogs?handler=GetRooms')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    renderRoomList(data.rooms); // Отображаем список комнат
-                } else {
-                    console.error('Ошибка при загрузке списка комнат');
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка запроса:', error);
-            });
     }
 
     function closeSidePanel() {
@@ -391,23 +507,25 @@
     }
 
     function performAction() {
-        console.log(currentFolder)
-        console.log(destFolder)
+        if (actionType === "copy") {
+            copyFile(selectedId, destFolder);
+        }
+        if (actionType === "move") {
+            copyFile(selectedId, currentFolder, destFolder);
+        }
     }
 
-    // Функция для отображения меню
-    function showPopupMenu(event, file) {
+    function showPopupMenu(event, fileId) {
+        selectedId = fileId;
         const popupMenu = document.getElementById('popupMenu');
         popupMenu.style.display = 'block';
         popupMenu.style.left = `${event.clientX}px`;
         popupMenu.style.top = `${event.clientY}px`;
 
-        // Скрыть меню при клике вне его области
         document.addEventListener('click', handleDocumentClick);
         popupMenu.addEventListener('click', (event) => event.stopPropagation());
     }
 
-    // Обработчик клика вне области меню
     function handleDocumentClick(event) {
         const popupMenu = document.getElementById('popupMenu');
         if (!popupMenu.contains(event.target)) {
@@ -416,32 +534,73 @@
         }
     }
 
-    // Функция рендеринга списка комнат в боковой панели
-    function renderRoomList(rooms) {
-        const roomList = document.getElementById('roomList');
-        roomList.innerHTML = ''; // Очищаем список перед добавлением новых элементов
-
-        if (!Array.isArray(rooms)) {
-            console.error('rooms не является массивом или является пустым.');
-            roomList.innerHTML = '<div>Error loading rooms</div>';
-            return;
-        }
-
-        rooms.forEach(room => {
-            if (!room || !room.name) {
-                console.error('Некорректные данные комнаты:', room);
-                return;
+    async function copyFile(fileId, destFolderId) {
+        try {
+            const response = await fetch(`/WorkingWithCatalogs?handler=CopyFile&fileId=${fileId}&destFolderId=${destFolderId}`);
+            if (response.ok) {
+                alert("File copied successfully.");
+            } else {
+                const errorMessage = await response.text();
+                alert(`Error copying file: ${errorMessage}`);
             }
+        } catch (error) {
+            console.error("Error copying file:", error);
+        }
+    }
 
-            const roomItem = document.createElement('div');
-            roomItem.className = 'room-item';
-            roomItem.textContent = room.name;
-            roomItem.onclick = () => {
-                console.log('Room clicked:', room.name);
-                // Дополнительные действия при клике на комнату
-            };
+    async function moveFile(fileId, folderId, destFolderId) {
+        try {
+            const response = await fetch(`/WorkingWithCatalogs?handler=MoveFile&fileId=${fileId}&folderId=${folderId}&destFolderId=${destFolderId}`);
+            if (response.ok) {
+                alert("File moved successfully.");
+            } else {
+                const errorMessage = await response.text();
+                alert(`Error moving file: ${errorMessage}`);
+            }
+        } catch (error) {
+            console.error("Error moving file:", error);
+        }
+    }
 
-            roomList.appendChild(roomItem);
-        });
+    async function createFolder(folderTitle, folderId) {
+        try {
+            const response = await fetch(`/WorkingWithCatalogs?handler=CreateFolder&folderTitle=${folderTitle}&folderId=${folderId}`);
+            if (response.ok) {
+                alert("Folder created successfully.");
+            } else {
+                const errorMessage = await response.text();
+                alert(`Error creating folder: ${errorMessage}`);
+            }
+        } catch (error) {
+            console.error("Error creating folder:", error);
+        }
+    }
+    
+    async function renameFolder(folderTitle, folderId) {
+        try {
+            const response = await fetch(`/WorkingWithCatalogs?handler=RenameFolder&folderTitle=${folderTitle}&folderId=${folderId}`);
+            if (response.ok) {
+                alert("Folder renamed successfully.");
+            } else {
+                const errorMessage = await response.text();
+                alert(`Error renaming folder: ${errorMessage}`);
+            }
+        } catch (error) {
+            console.error("Error renaming folder:", error);
+        }
+    }
+
+    async function deleteFolder(folderId) {
+        try {
+            const response = await fetch(`/WorkingWithCatalogs?handler=DeleteFolder&folderId=${folderId}`);
+            if (response.ok) {
+                alert("Folder renamed successfully.");
+            } else {
+                const errorMessage = await response.text();
+                alert(`Error renaming folder: ${errorMessage}`);
+            }
+        } catch (error) {
+            console.error("Error renaming folder:", error);
+        }
     }
 </script>
